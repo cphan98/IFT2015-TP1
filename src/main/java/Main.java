@@ -9,31 +9,42 @@ public class Main {
         for (GridAndWords gridAndWords : wholeFile) {
             System.out.println("\u001b[34m"+gridAndWords.toString()+"\u001b[0m"); //color text in blue
         }
-
     }
 
+    /**
+     * The function readFile returns an array list containing the grid and words of each query given in a text file.
+     *
+     * @param fileName  the name of the text file to be read
+     * @return          an array list containing the grid and words of each query
+     */
     public static ArrayList<GridAndWords> readFile(String fileName) { // reads the file provided with a buffer line by line
         try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
-            int height;
-            int width;
+            int gridHeight;
+            int gridWidth;
             ArrayList<GridAndWords> wholeFile = new ArrayList<>();
+
             while (true) {
                 String line = br.readLine();
+
                 if (line == null) break;
-                height = Integer.parseInt(line.split(" ")[0]);
-                width = Integer.parseInt(line.split(" ")[1]);
-                char[][] matrix = new char[height][width];
-                for (int i = 0; i < height; i++) {
+
+                gridHeight = Integer.parseInt(line.split(" ")[0]);
+                gridWidth = Integer.parseInt(line.split(" ")[1]);
+
+                char[][] grid = new char[gridHeight][gridWidth];
+
+                for (int i = 0; i < gridHeight; i++) {
                     line = br.readLine();
-                    for (int j = 0; j < width; j++) {
-                        matrix[i][j] = line.split(" ")[j].charAt(0);
+
+                    for (int j = 0; j < gridWidth; j++) {
+                        grid[i][j] = line.split(" ")[j].charAt(0);
                     }
                 }
-                String[] wordsLine = br.readLine().split(" ");
-                GridAndWords charsAndWords = new GridAndWords(matrix, wordsLine);
-                wholeFile.add(charsAndWords);
-            }
 
+                String[] wordsLine = br.readLine().split(" ");
+                GridAndWords gridAndWords = new GridAndWords(grid, wordsLine);
+                wholeFile.add(gridAndWords);
+            }
             return wholeFile;
         } catch(IOException e) {
             System.out.println("Unable to read file " + fileName);
