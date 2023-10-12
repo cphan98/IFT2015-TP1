@@ -1,20 +1,25 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.sql.Array;
 import java.util.ArrayList;
-import java.util.Objects;
+import java.util.Arrays;
 
 public class Main {
     public static void main(String[] args) {
-        ArrayList<Object> wholeFile = readFile(args[0]);
+        ArrayList<GridAndWords> wholeFile = readFile(args[0]);
     }
 
-    public static ArrayList<Object> readFile(String fileName) {
+    /**
+     * The readFile function read a text file and returns an array list containing the queries from the file.
+     *
+     * @param fileName  the name of the file to be read
+     * @return          an array list containing the file's queries
+     */
+    public static ArrayList<GridAndWords> readFile(String fileName) {
         try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
             int gridHeight;
             int gridWidth;
-            ArrayList<Object> wholeFile = new ArrayList<>();
+            ArrayList<GridAndWords> wholeFile = new ArrayList<>();
 
             while (true) {
                 String line = br.readLine();
@@ -35,9 +40,12 @@ public class Main {
                 }
 
                 String[] wordsLine = br.readLine().split(" ");
+                Arrays.sort(wordsLine);
                 GridAndWords query = new GridAndWords(grid, wordsLine);
-                wholeFile.add(query.createQuery(grid, wordsLine));
+                wholeFile.add(query);
             }
+
+            return wholeFile;
         } catch (IOException e) {
             System.out.println("Unable to read fille " + fileName);
         }
