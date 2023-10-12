@@ -6,6 +6,7 @@ import java.util.ArrayList;
 public class Main {
     public static void main(String[] args) {
         // TODO
+        // idea : for each query, create a pair where the key is char[][] and value is String[] -> no need to create a new class
         }
     }
 }
