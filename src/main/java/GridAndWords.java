@@ -1,5 +1,4 @@
-import java.util.ArrayList;
-import java.util.Objects;
+import java.util.Arrays;
 
 public class GridAndWords {
     // attributes
@@ -28,13 +27,9 @@ public class GridAndWords {
         this.words = words;
     }
 
-    // create an array list of a query's grid and words
-    public ArrayList<Object> createQuery(char[][] grid, String[] words) {
-        ArrayList<Object> query = new ArrayList<>();
-
-        query.add(grid);
-        query.add(words);
-
-        return query;
+    // pretty print
+    @Override
+    public String toString() {
+        return "[" + Arrays.deepToString(grid) + "," + Arrays.toString(words) + "]";
     }
 }
