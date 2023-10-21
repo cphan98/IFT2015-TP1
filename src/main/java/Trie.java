@@ -1,5 +1,4 @@
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Trie is a class for a standard Trie with character nodes.
@@ -49,5 +48,24 @@ public class Trie {
             node = node.children.get(c); // move node to process the next char
         }
         node.isWord = true; // last node accessed is for the last char of the word
+    }
+
+    /**
+     * findFirstChar uses breadth-first search to find the first character of a word in a trie. Only the first level is
+     * visited.
+     *
+     * @param firstChar a character
+     * @return          a TrieNode; the node that contains firstChar
+     */
+    public TrieNode findFirstChar(char firstChar) {
+        Queue<TrieNode> queue= new ArrayDeque<>();
+        queue.add(root);
+        while (!queue.isEmpty()) {
+            TrieNode currentNode = queue.remove();
+            if (currentNode.children.containsKey(firstChar)) {
+                return currentNode;
+            }
+        }
+        return null;
     }
 }
