@@ -7,10 +7,10 @@ import java.util.*;
  */
 public class Trie {
     // inner class TrieNode
-    private static class TrieNode {
+    public static class TrieNode {
         // attributes
-        private Map<Character, TrieNode> children; // map for children nodes
-        private boolean isWord; // boolean for marking word nodes; removes the prefix restriction
+        public Map<Character, TrieNode> children; // map for children nodes
+        public boolean isWord; // boolean for marking word nodes; removes the prefix restriction
 
         // constructor
         public TrieNode() {
@@ -27,6 +27,11 @@ public class Trie {
 
     // attributes
     private final TrieNode root = new TrieNode(); // root of the Trie
+
+    // getters
+    public TrieNode getRoot() {
+        return root;
+    }
 
     // constructor
     public Trie(String[] words) {
@@ -58,7 +63,7 @@ public class Trie {
      * @return          a TrieNode; the node that contains firstChar
      */
     public TrieNode findFirstChar(char firstChar) {
-        Queue<TrieNode> queue= new ArrayDeque<>();
+        Queue<TrieNode> queue = new ArrayDeque<>();
         queue.add(root);
         while (!queue.isEmpty()) {
             TrieNode currentNode = queue.remove();
