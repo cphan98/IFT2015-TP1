@@ -7,25 +7,69 @@ public class Main {
     public static void main(String[] args) {
         ArrayList<GridAndWords> wholeFile = readFile(args[0]);
 
-        for (GridAndWords query : wholeFile) {
-            System.out.println(query);
-        }
+        try {
+            if (wholeFile == null) throw new NullPointerException();
 
-        System.out.println();
-
-        ArrayList<HashMap<Character, ArrayList<int[]>>> charAndPositionsArrayList = charAndPositionsArrayList(wholeFile);
-
-        for (HashMap<Character, ArrayList<int[]>> query : charAndPositionsArrayList) {
-            for (char key : query.keySet()) {
-                System.out.println(key + "=" + Arrays.deepToString(query.get(key).toArray()));
+            for (GridAndWords query : wholeFile) {
+                System.out.println(query);
             }
+
             System.out.println();
-        }
 
-        wholeFile = updateWholeFile(wholeFile, charAndPositionsArrayList);
+            ArrayList<HashMap<Character, ArrayList<int[]>>> charAndPositionsArrayList = charAndPositionsArrayList(wholeFile);
 
-        for (GridAndWords query : wholeFile) {
-            System.out.println(query);
+            for (HashMap<Character, ArrayList<int[]>> query : charAndPositionsArrayList) {
+                for (char key : query.keySet()) {
+                    System.out.println(key + "=" + Arrays.deepToString(query.get(key).toArray()));
+                }
+                System.out.println();
+            }
+
+            wholeFile = updateWholeFile(wholeFile, charAndPositionsArrayList);
+
+            for (GridAndWords query : wholeFile) {
+                System.out.println(query.toString());
+            }
+
+            System.out.println();
+            System.out.println("testing findNextChar...");
+
+            GridAndWords testQuery = wholeFile.get(1);
+            System.out.println(testQuery.toString());
+
+            char[][] testGrid = testQuery.getGrid();
+            String[] testWords = testQuery.getWords();
+
+            HashMap<Character, ArrayList<int[]>> testCharAndPositions = charAndPositionsArrayList.get(1);
+            for (char testKey : testCharAndPositions.keySet()) {
+                System.out.println(testKey + "=" + Arrays.deepToString(testCharAndPositions.get(testKey).toArray()));
+            }
+
+            String testWord = testWords[0];
+            System.out.println(testWord);
+
+            char testFirstChar = testWord.charAt(0);
+            System.out.print(testFirstChar + "=");
+
+            ArrayList<int[]> testFirstCharPositions = testCharAndPositions.get(testFirstChar);
+            System.out.println(Arrays.deepToString(testFirstCharPositions.toArray()));
+
+            ArrayList<String> testPaths = new ArrayList<>();
+            System.out.println("testPaths = " + testPaths);
+
+            for (int[] testPosition : testFirstCharPositions) {
+                ArrayList<String> testWordPath = new ArrayList<>();
+                testWordPath.add("(" + testPosition[0] + "," + testPosition[1] + ")");
+                ArrayList<String> testFindNextCharArrayList = findNextChar(testGrid, testWord, testPosition,
+                        0, testWordPath);
+                System.out.println("testWordPath = " + testWordPath);
+                if (testWordPath.size() > 1) testPaths.addAll(testWordPath);
+            }
+
+//            System.out.println();
+//            System.out.println("testPaths = " + testPaths);
+        } catch (NullPointerException e) {
+            System.out.println("Cannot process queries.");
         }
 
         System.out.println();
@@ -217,7 +261,7 @@ public class Main {
         return updatedWholeFile;
     }
 
-    public String findLocationInGrid(char[][] grid, int left, int right, int top, int bottom) {
+    public static String findLocationInGrid(char[][] grid, int left, int right, int top, int bottom) {
         String positionInGrid = null;
 
         // possible locations in the grid
@@ -243,10 +287,15 @@ public class Main {
         return positionInGrid;
     }
 
-    public ArrayList<String> findNextChar(char[][] grid, String word, int[] currentPosition, int currentIndex) {
+    public static ArrayList<String> findNextChar(char[][] grid, String word, int[] currentPosition, int currentIndex, ArrayList<String> path) {
         // check if the current char is the last char of the word
+        System.out.println();
+        System.out.println("currentIndex = " + currentIndex + ", currentPosition = [" + currentPosition[0] + "," +
+                currentPosition[1] + "], currentChar = " + word.charAt(currentIndex));
+        System.out.println("currentIndex == word.length() - 1? " + (currentIndex == word.length() - 1));
+
         if (currentIndex == word.length() - 1) {
-            // TODO
+            return path;
         }
 
         // adjacent column and rows
@@ -254,9 +303,11 @@ public class Main {
         int right = currentPosition[1] + 1;
         int top = currentPosition[0] - 1;
         int bottom = currentPosition[0] + 1;
+        System.out.println("left = " + left + ", right = " + right + ", top = " + top + ", bottom = " + bottom);
 
-        // find location of self in the grid
+        // find location of current char in the grid
         String locationInGrid = findLocationInGrid(grid, left, right, top, bottom);
+        System.out.println("locationInGrid = " + locationInGrid);
 
         // initialize chars
         char leftChar, topLeftChar, topChar, topRightChar, rightChar, bottomRightChar, bottomChar, bottomLeftChar;
@@ -267,6 +318,7 @@ public class Main {
         // next char in the word
         int nextIndex = currentIndex + 1;
         char nextChar = word.charAt(nextIndex);
+        System.out.println("nextIndex = " + nextIndex + ", nextChar = " + nextChar);
 
         try {
             if (locationInGrid == null) throw new NullPointerException();
@@ -274,30 +326,36 @@ public class Main {
             // next char search
             switch (locationInGrid) {
                 case "topLeftCorner" -> {
-                    // adjacent chars
+                    // adjacents chars
                     rightChar = grid[currentPosition[0]][right];
                     bottomRightChar = grid[bottom][right];
                     bottomChar = grid[bottom][currentPosition[1]];
 
                     // search
                     if (currentChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + currentPosition[1] + ")";
+                        path.add("(" + currentPosition[0] + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (rightChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + right + ")";
+                        path.add("(" + currentPosition[0] + "," + right + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomRightChar == nextChar) {
-                        String position = "(" + bottom + "," + right + ")";
+                        path.add("(" + bottom + "," + right + ")");
+                        int[] nextPosition = new int[]{bottom, right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     };
                     if (bottomChar == nextChar) {
-                        String position = "(" + bottom + "," + currentPosition[1] + ")";
+                        path.add("(" + bottom + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{bottom, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     };
-
-                    // TODO
                 }
 
                 case "leftExtremity" -> {
-                    // adjacent chars
+                    // adjacents chars
                     topChar = grid[top][currentPosition[1]];
                     topRightChar = grid[top][right];
                     rightChar = grid[currentPosition[0]][right];
@@ -306,52 +364,68 @@ public class Main {
 
                     // search
                     if (currentChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + currentPosition[1] + ")";
+                        path.add("(" + currentPosition[0] + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topChar == nextChar) {
-                        String position = "(" + top + "," + currentPosition[1] + ")";
+                        path.add("(" + top + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{top, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topRightChar == nextChar) {
-                        String position = "(" + top + "," + right + ")";
+                        path.add("(" + top + "," + right + ")");
+                        int[] nextPosition = new int[]{top, right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (rightChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + right + ")";
+                        path.add("(" + currentPosition[0] + "," + right + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomRightChar == nextChar) {
-                        String position = "(" + bottom + "," + right + ")";
+                        path.add("(" + bottom + "," + right + ")");
+                        int[] nextPosition = new int[]{bottom, right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomChar == nextChar) {
-                        String position = "(" + bottom + "," + currentPosition[1] + ")";
+                        path.add("(" + bottom + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{bottom, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
-
-                    // TODO
                 }
 
                 case "bottomLeftCorner" -> {
-                    // adjacent chars
+                    // adjacents chars
                     topChar = grid[top][currentPosition[1]];
                     topRightChar = grid[top][right];
                     rightChar = grid[currentPosition[0]][right];
 
                     // search
                     if (currentChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + currentPosition[1] + ")";
+                        path.add("(" + currentPosition[0] + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topChar == nextChar) {
-                        String position = "(" + top + "," + currentPosition[1] + ")";
+                        path.add("(" + top + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{top, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topRightChar == nextChar) {
-                        String position = "(" + top + "," + right + ")";
+                        path.add("(" + top + "," + right + ")");
+                        int[] nextPosition = new int[]{top, right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (rightChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + right + ")";
+                        path.add("(" + currentPosition[0] + "," + right + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
-
-                    // TODO
                 }
 
                 case "topExtremity" -> {
-                    // adjacent chars
+                    // adjacents chars
                     rightChar = grid[currentPosition[0]][right];
                     bottomRightChar = grid[bottom][right];
                     bottomChar = grid[bottom][currentPosition[1]];
@@ -360,29 +434,39 @@ public class Main {
 
                     // search
                     if (currentChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + currentPosition[1] + ")";
+                        path.add("(" + currentPosition[0] + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (rightChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + right + ")";
+                        path.add("(" + currentPosition[0] + "," + right + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomRightChar == nextChar) {
-                        String position = "(" + bottom + "," + right + ")";
+                        path.add("(" + bottom + "," + right + ")");
+                        int[] nextPosition = new int[]{bottom, right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomChar == nextChar) {
-                        String position = "(" + bottom + "," + currentPosition[1] + ")";
+                        path.add("(" + bottom + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{bottom, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomLeftChar == nextChar) {
-                        String position = "(" + bottom + "," + left + ")";
+                        path.add("(" + bottom + "," + left + ")");
+                        int[] nextPosition = new int[]{bottom, left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (leftChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + left + ")";
+                        path.add("(" + currentPosition[0] + "," + left + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
-
-                    // TODO
                 }
 
                 case "bottomExtremity" -> {
-                    // adjacent chars
+                    // adjacents chars
                     leftChar = grid[currentPosition[0]][left];
                     topLeftChar = grid[top][left];
                     topChar = grid[top][currentPosition[1]];
@@ -391,52 +475,68 @@ public class Main {
 
                     // search
                     if (currentChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + currentPosition[1] + ")";
+                        path.add("(" + currentPosition[0] + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (leftChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + left + ")";
+                        path.add("(" + currentPosition[0] + "," + left + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topLeftChar == nextChar) {
-                        String position = "(" + top + "," + left + ")";
+                        path.add("(" + top + "," + left + ")");
+                        int[] nextPosition = new int[]{top, left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topChar == nextChar) {
-                        String position = "(" + top + "," + currentPosition[1] + ")";
+                        path.add("(" + top + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{top, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topRightChar == nextChar) {
-                        String position = "(" + top + "," + right + ")";
+                        path.add("(" + top + "," + right + ")");
+                        int[] nextPosition = new int[]{top, right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (rightChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + right + ")";
+                        path.add("(" + currentPosition[0] + "," + right + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
-
-                    // TODO
                 }
 
                 case "topRightCorner" -> {
-                    // adjacent chars
+                    // adjacents chars
                     bottomChar = grid[bottom][currentPosition[1]];
                     bottomLeftChar = grid[bottom][left];
                     leftChar = grid[currentPosition[0]][left];
 
                     // search
                     if (currentChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + currentPosition[1] + ")";
+                        path.add("(" + currentPosition[0] + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomChar == nextChar) {
-                        String position = "(" + bottom + "," + currentPosition[1] + ")";
+                        path.add("(" + bottom + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{bottom, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomLeftChar == nextChar) {
-                        String position = "(" + bottom + "," + left + ")";
+                        path.add("(" + bottom + "," + left + ")");
+                        int[] nextPosition = new int[]{bottom, left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (leftChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + left + ")";
+                        path.add("(" + currentPosition[0] + "," + left + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
-
-                    // TODO
                 }
 
                 case "rightExtremity" -> {
-                    // adjacent chars
+                    // adjacents chars
                     bottomChar = grid[bottom][currentPosition[1]];
                     bottomLeftChar = grid[bottom][left];
                     leftChar = grid[currentPosition[0]][left];
@@ -445,52 +545,68 @@ public class Main {
 
                     // search
                     if (currentChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + currentPosition[1] + ")";
+                        path.add("(" + currentPosition[0] + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomChar == nextChar) {
-                        String position = "(" + bottom + "," + currentPosition[1] + ")";
+                        path.add("(" + bottom + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{bottom, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomLeftChar == nextChar) {
-                        String position = "(" + bottom + "," + left + ")";
+                        path.add("(" + bottom + "," + left + ")");
+                        int[] nextPosition = new int[]{bottom, left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (leftChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + left + ")";
+                        path.add("(" + currentPosition[0] + "," + left + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topLeftChar == nextChar) {
-                        String position = "(" + top + "," + left + ")";
+                        path.add("(" + top + "," + left + ")");
+                        int[] nextPosition = new int[]{top, left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topChar == nextChar) {
-                        String position = "(" + top + "," + currentPosition[1] + ")";
+                        path.add("(" + top + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{top, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
-
-                    // TODO
                 }
 
                 case "bottomRightCorner" -> {
-                    // adjacent chars
+                    // adjacents chars
                     leftChar = grid[currentPosition[0]][left];
                     topLeftChar = grid[top][left];
                     topChar = grid[top][currentPosition[1]];
 
                     // search
                     if (currentChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + currentPosition[1] + ")";
+                        path.add("(" + currentPosition[0] + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (leftChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + left + ")";
+                        path.add("(" + currentPosition[0] + "," + left + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topLeftChar == nextChar) {
-                        String position = "(" + top + "," + left + ")";
+                        path.add("(" + top + "," + left + ")");
+                        int[] nextPosition = new int[]{top, left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topChar == nextChar) {
-                        String position = "(" + top + "," + currentPosition[1] + ")";
+                        path.add("(" + top + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{top, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
-
-                    // TODO
                 }
 
                 case "middle" -> {
-                    // adjacent chars
+                    // adjacents chars
                     leftChar = grid[currentPosition[0]][left];
                     topLeftChar = grid[top][left];
                     topChar = grid[top][currentPosition[1]];
@@ -502,36 +618,54 @@ public class Main {
 
                     // search
                     if (currentChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + currentPosition[1] + ")";
+                        path.add("(" + currentPosition[0] + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (leftChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + left + ")";
+                        path.add("(" + currentPosition[0] + "," + left + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topLeftChar == nextChar) {
-                        String position = "(" + top + "," + left + ")";
+                        path.add("(" + top + "," + left + ")");
+                        int[] nextPosition = new int[]{top, left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topChar == nextChar) {
-                        String position = "(" + top + "," + currentPosition[1] + ")";
+                        path.add("(" + top + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{top, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (topRightChar == nextChar) {
-                        String position = "(" + top + "," + right + ")";
+                        path.add("(" + top + "," + right + ")");
+                        int[] nextPosition = new int[]{top, right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (rightChar == nextChar) {
-                        String position = "(" + currentPosition[0] + "," + right + ")";
+                        path.add("(" + currentPosition[0] + "," + right + ")");
+                        int[] nextPosition = new int[]{currentPosition[0], right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomRightChar == nextChar) {
-                        String position = "(" + bottom + "," + right + ")";
+                        path.add("(" + bottom + "," + right + ")");
+                        int[] nextPosition = new int[]{bottom, right};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomChar == nextChar) {
-                        String position = "(" + bottom + "," + currentPosition[1] + ")";
+                        path.add("(" + bottom + "," + currentPosition[1] + ")");
+                        int[] nextPosition = new int[]{bottom, currentPosition[1]};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
                     if (bottomLeftChar == nextChar) {
-                        String position = "(" + top + "," + left + ")";
+                        path.add("(" + top + "," + left + ")");
+                        int[] nextPosition = new int[]{top, left};
+                        findNextChar(grid, word, nextPosition, nextIndex, path);
                     }
-
-                    // TODO
                 }
             }
+
+            return path;
         } catch (NullPointerException e) {
             System.out.println("Unexpected value: position in grid is " + locationInGrid);
         }
@@ -543,16 +677,16 @@ public class Main {
         // list of all the paths found for one word
         ArrayList<String> paths = new ArrayList<>();
 
-        // list of positions of one word
-        ArrayList<String> path = new ArrayList<>();
-
         // find list of positions of 1st char in the hashmap
         char firstChar = word.charAt(0);
         ArrayList<int[]> firstCharPositions = charAndPositions.get(firstChar);
 
         // begin the search at each position of the 1st char
         for (int[] position : firstCharPositions) {
-            path.add(word);
+            // list of positions of one word
+            ArrayList<String> path = new ArrayList<>();
+            path.add("(" + position[0] + "," + position[1] + ")");
+            ArrayList<String> charArrayList = findNextChar(grid, word, position, 0, path);
             // TODO : findNextChar
         }
 
