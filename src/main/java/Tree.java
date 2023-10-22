@@ -2,8 +2,6 @@ import java.util.Iterator;
 import java.lang.Iterable;
 import java.lang.IllegalArgumentException;
 
-import ca.umontreal.adt.list.Position;
-
 /**
 * Tree is an interface for the ADT Tree
 *    uses the Position interface defined in the adt list.
