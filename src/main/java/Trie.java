@@ -9,7 +9,7 @@ public class Trie {
     // inner class TrieNode
     public static class TrieNode {
         // attributes
-        public Map<Character, TrieNode> children; // map for children nodes
+        public Map<int[], TrieNode> children; // map for children nodes
         public boolean isWord; // boolean for marking word nodes; removes the prefix restriction
 
         // constructor
@@ -55,22 +55,52 @@ public class Trie {
         node.isWord = true; // last node accessed is for the last char of the word
     }
 
-    /**
-     * findFirstChar uses breadth-first search to find the first character of a word in a trie. Only the first level is
-     * visited.
-     *
-     * @param firstChar a character
-     * @return          a TrieNode; the node that contains firstChar
-     */
-    public TrieNode findFirstChar(char firstChar) {
-        Queue<TrieNode> queue = new ArrayDeque<>();
-        queue.add(root);
-        while (!queue.isEmpty()) {
-            TrieNode currentNode = queue.remove();
-            if (currentNode.children.containsKey(firstChar)) {
-                return currentNode;
-            }
+    public Trie(String word, char[][] grid, HashMap<Character, ArrayList<int[]>> charAndPositions) {
+        TrieNode node = root;
+
+        // add positions of 1st char to Trie
+        char firstChar = word.charAt(0);
+        ArrayList<int[]> firstCharPositions = charAndPositions.get(firstChar);
+        for (int[] position : firstCharPositions) {
+            node.children.put(position, new TrieNode());
         }
-        return null;
+
+        for (Map.Entry<int[], TrieNode> set : node.children.entrySet()) {
+            int currentWordIndex = 0;
+            char currentWordChar = firstChar;
+            int[] currentGridPosition = set.getKey();
+            int nextWordIndex = currentWordIndex + 1;
+            char nextWordChar = word.charAt(nextWordIndex);
+
+            // adjacent columns and rows
+            int left = currentGridPosition[1] - 1;
+            int right = currentGridPosition[1] + 1;
+            int top = currentGridPosition[0] - 1;
+            int bottom = currentGridPosition[0] + 1;
+
+            // find location of currentGirdPositon in grid
+            String locationInGrid;
+            // possible locations in grid
+            // top left corner
+            if (left == -1 && right == 1 && top == -1 && bottom == 1) locationInGrid = "topLeftCorner";
+            // left extremity
+            if (left == -1 && right == 1 && top >= 0 && bottom < grid.length) locationInGrid = "leftExtremity";
+            // bottom left corner
+            if (left == -1 && right == 1 && top >= 0 && bottom == grid.length) locationInGrid = "bottomLeftCorner";
+            // top extremity
+            if (left >= 0 && right < grid[0].length && top == -1 && bottom < grid.length) locationInGrid = "topExtremity";
+            // bottom extremity
+            if (left >= 0 && right < grid[0].length && top >= 0 && bottom == grid.length) locationInGrid = "bottomExtremity";
+            // top right corner
+            if (left >= 0 && right == grid[0].length && top == -1 && bottom < grid.length) locationInGrid = "topRightCorner";
+            // right extremity
+            if (left >= 0 && right == grid[0].length && top >= 0 && bottom < grid.length) locationInGrid = "rightExtremity";
+            // bottom right corner
+            if (left >= 0 && right == grid[0].length && top >= 0 && bottom == grid.length) locationInGrid = "bottomRightCorner";
+            // middle
+            if (left >= 0 && right < grid[0].length && top >= 0 && bottom < grid.length) locationInGrid = "middle";
+
+
+        }
     }
 }
