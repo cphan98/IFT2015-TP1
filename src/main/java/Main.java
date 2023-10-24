@@ -5,47 +5,26 @@ import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
+        long startTime = System.nanoTime();
         ArrayList<GridAndWords> wholeFile = readFile(args[0]);
-
         try {
             if (wholeFile == null) throw new NullPointerException();
 
-            for (GridAndWords query : wholeFile) {
-                System.out.println(query);
-            }
-
-            System.out.println();
-
             ArrayList<HashMap<Character, ArrayList<int[]>>> charAndPositions = charAndPositionsArrayList(wholeFile);
-
-            for (HashMap<Character, ArrayList<int[]>> query : charAndPositions) {
-                for (char key : query.keySet()) {
-                    System.out.println(key + "=" + Arrays.deepToString(query.get(key).toArray()));
-                }
-                System.out.println();
-            }
-
-            wholeFile = updateWholeFile(wholeFile, charAndPositions);
-
-            for (GridAndWords query : wholeFile) {
-                System.out.println(query.toString());
-            }
-
-            System.out.println();
-            System.out.println("process queries...");
-            System.out.println();
 
             for (int query = 0; query < wholeFile.size(); query++) {
                 System.out.println("Query " + (query + 1) + ":");
                 HashMap<Character, ArrayList<int[]>> queryCharAndPositions = charAndPositions.get(query);
-                ArrayList<String> paths = new ArrayList<>();
-                findWords(wholeFile.get(query).getWords(), wholeFile.get(query).getGrid(), queryCharAndPositions, paths);
+                findWords(wholeFile.get(query).getWords(), queryCharAndPositions);
             }
         } catch (NullPointerException e) {
             System.out.println("Cannot process queries.");
         }
-
         System.out.println();
+        long endTime = System.nanoTime();
+        long timeElapsed = endTime - startTime;
+        System.out.println("Execution time in nanoseconds: " + timeElapsed);
+        System.out.println("Execution time in milliseconds: " + timeElapsed / 1000000);
     }
 
     /**
@@ -101,26 +80,13 @@ public class Main {
     public static HashMap<Character, ArrayList<int[]>> charAndPositionsHashMap(GridAndWords query) {
         HashMap<Character, ArrayList<int[]>> hashMap = new HashMap<>();
         char[][] grid = query.getGrid();
-        int gridHeight = grid.length;
-        int gridWidth = grid[0].length;
 
-        for (int row = 0; row < gridHeight; row++ ) {
-            for (int column = 0; column < gridWidth; column++) {
+        for (int row = 0; row < grid.length; row++ ) {
+            for (int column = 0; column < grid[row].length; column++) {
                 char letter = grid[row][column];
-                int[] position = new int[2];
-                position[0] = row;
-                position[1] = column;
+                int[] position = {row, column};
 
-                if (!hashMap.containsKey(letter)) {
-                    ArrayList<int[]> positions = new ArrayList<>();
-                    positions.add(position);
-                    hashMap.put(letter, positions);
-                    continue;
-                }
-
-                ArrayList<int[]> positions = hashMap.get(letter);
-                positions.add(position);
-                hashMap.replace(letter, positions);
+                hashMap.computeIfAbsent(letter, k -> new ArrayList<>()).add(position);
             }
         }
         return hashMap;
@@ -141,380 +107,83 @@ public class Main {
         return arrayList;
     }
 
-    /**
-     * For a given word, charIsInGrid verifies if all the characters are present in a given grid.
-     *
-     * @param charAndPositionsHashMap   a hashmap with characters as keys and array lists of positions as value
-     * @param word                      a string; a word of a query
-     * @return                          false if a character of the word is not present in the hashmap
-     */
-    public static boolean charsIsInGrid(HashMap<Character, ArrayList<int[]>> charAndPositionsHashMap, String word) {
-        for (int letter = 0; letter < word.length(); letter++) {
-            if (!charAndPositionsHashMap.containsKey(word.charAt(letter))) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     /**
-     * wordsToRemove creates an array list of words that are not present in a given grid.
+     * Searches for all possible paths of a word within a grid and returns them.
      *
-     * @param charAndPositionsHashMap   a hashmap with characters as keys and array lists of positions as value
-     * @param words                     an array of strings; words of a query
-     * @return                          an array list of strings
+     * @param word the target word to search for.
+     * @param charAndPositions a hashmap containing characters as keys and lists of their positions in the grid as values.
+     * @return a list of paths, where each path is an array of positions (i, j) indicating where each character of the word can be found in the grid.
      */
-    public static ArrayList<String> wordsToRemove(HashMap<Character, ArrayList<int[]>> charAndPositionsHashMap, String[] words) {
-        ArrayList<String> wordsToRemove = new ArrayList<>();
-        for (String word : words) {
-            if (!charsIsInGrid(charAndPositionsHashMap, word)) {
-                wordsToRemove.add(word);
+    public static List<int[][]> findWord(String word, HashMap<Character, ArrayList<int[]>> charAndPositions) {
+        List<int[][]> allPaths = new ArrayList<>();
+
+        // Start the search with the first character of the word
+        if (charAndPositions.containsKey(word.charAt(0))) {
+            for (int[] start : charAndPositions.get(word.charAt(0))) {
+                int[][] currentPath = new int[word.length()][];
+                currentPath[0] = start;
+                search(word, 1, charAndPositions, currentPath, allPaths);
             }
         }
-
-        return wordsToRemove;
+        return allPaths;
     }
 
     /**
-     * removeWords removes words not present in a given grid from the original array of words to be found, and creates
-     * an updated array of words to be found.
+     * Recursively searches for paths of the word within the grid starting from a given index.
      *
-     * @param words         the original array of strings; original array of words
-     * @param wordsToRemove an array list of strings; words to remove
-     * @return              an array of strings; the updated array of words to be found
+     * @param word the target word to search for.
+     * @param wordIndex the current index within the word.
+     * @param charAndPositions a hashmap containing characters as keys and lists of their positions in the grid as values.
+     * @param currentPath the current path being formed.
+     * @param allPaths a collection of all found paths for the word.
      */
-    public static String[] removeWords(String[] words, ArrayList<String> wordsToRemove) {
-        List<String> tempUpdatedWords = new ArrayList<>(Arrays.asList(words));
-
-        for (String wordToRemove : wordsToRemove) {
-            tempUpdatedWords.remove(wordToRemove);
-        }
-
-        return tempUpdatedWords.toArray(new String[0]);
-    }
-
-    /**
-     * updateWholeFile creates a new array list of queries with their updated words.
-     *
-     * @param wholeFile                 the original array list of GridAndWords
-     * @param charAndPositionsArrayList an array list of hashmaps
-     * @return                          a new array list of GridAndWords
-     */
-    public static ArrayList<GridAndWords> updateWholeFile(ArrayList<GridAndWords> wholeFile, ArrayList<HashMap<Character, ArrayList<int[]>>> charAndPositionsArrayList) {
-        ArrayList<GridAndWords> updatedWholeFile = new ArrayList<>();
-
-        try {
-            if (wholeFile.size() != charAndPositionsArrayList.size()) {
-                throw new ArrayIndexOutOfBoundsException();
-            }
-
-            for (int i = 0; i < wholeFile.size(); i++) {
-                HashMap<Character, ArrayList<int[]>> charAndPositions = charAndPositionsArrayList.get(i);
-                GridAndWords query = wholeFile.get(i);
-                String[] words = query.getWords();
-
-                ArrayList<String> wordsToRemove = wordsToRemove(charAndPositions, words);
-
-                if (!wordsToRemove.isEmpty()) {
-                    String[] updatedWords = removeWords(words, wordsToRemove);
-
-                    query.setWords(updatedWords);
-                    updatedWholeFile.add(query);
-
-                    continue;
-                }
-
-                updatedWholeFile.add(query);
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.out.println("The wholeFile length does not match the charAndPositionsArrayList length.");
-        }
-
-        return updatedWholeFile;
-    }
-
-    public static String findLocationInGrid(char[][] grid, int left, int right, int top, int bottom) {
-        // possible locations in the grid
-        // top left corner
-        if (left == -1 && right == 1 && top == -1 && bottom == 1) return "topLeftCorner";
-        // left extremity
-        if (left == -1 && right == 1 && top >= 0 && bottom < grid.length) return "leftExtremity";
-        // bottom left corner
-        if (left == -1 && right == 1 && top >= 0 && bottom == grid.length) return "bottomLeftCorner";
-        // top extremity
-        if (left >= 0 && right < grid[0].length && top == -1 && bottom < grid.length) return "topExtremity";
-        // bottom extremity
-        if (left >= 0 && right < grid[0].length && top >= 0 && bottom == grid.length) return "bottomExtremity";
-        // top right corner
-        if (left >= 0 && right == grid[0].length && top == -1 && bottom < grid.length) return "topRightCorner";
-        // right extremity
-        if (left >= 0 && right == grid[0].length && top >= 0 && bottom < grid.length) return "rightExtremity";
-        // bottom right corner
-        if (left >= 0 && right == grid[0].length && top >= 0 && bottom == grid.length) return "bottomRightCorner";
-        // middle
-        if (left >= 0 && right < grid[0].length && top >= 0 && bottom < grid.length) return "middle";
-
-        return null;
-    }
-
-    public static void findWord(String word, int currentWordIndex, int[] currentPosition, ArrayList<String> currentPath, char[][] grid, ArrayList<String> wordPaths) {
-        // check if the end of the word is reached
-        if (currentWordIndex == -1) {
-            String path = word + " ";
-            path += String.join("->", currentPath);
-            wordPaths.add(path);
+    private static void search(String word, int wordIndex, HashMap<Character, ArrayList<int[]>> charAndPositions, int[][] currentPath, List<int[][]> allPaths) {
+        if (wordIndex == word.length()) {
+            allPaths.add(currentPath.clone()); // Use clone to store a copy of the current path
             return;
         }
 
-        // append the current position to the current path
-        currentPath.add("(" + currentPosition[0] + "," + currentPosition[1] + ")");
+        char nextChar = word.charAt(wordIndex);
+        int[] lastPosition = currentPath[wordIndex - 1];
 
-        // columns and rows adjacent to the current position
-        int left = currentPosition[1] - 1;
-        int right = currentPosition[1] + 1;
-        int top = currentPosition[0] - 1;
-        int bottom = currentPosition[0] + 1;
-
-        // find the location of the current position in the grid
-        String locationInGrid = findLocationInGrid(grid, left, right, top, bottom);
-        if (locationInGrid == null) return;
-
-        // next character in the word
-        int nextWordIndex;
-        char nextWordChar = 0;
-        if (currentWordIndex == word.length() - 1) {
-            nextWordIndex = -1;
-            findWord(word, -1, currentPosition, currentPath, grid, wordPaths);
-        } else {
-            nextWordIndex = currentWordIndex + 1;
-            nextWordChar = word.charAt(nextWordIndex);
-        }
-
-        // positions adjacent to the current position according to its location in the grid
-        int[] leftPos = new int[]{currentPosition[0], left};
-        int[] topLeftPos = new int[]{top, left};
-        int[] topPos = new int[]{top, currentPosition[1]};
-        int[] topRightPos = new int[]{top, right};
-        int[] rightPos = new int[]{currentPosition[0], right};
-        int[] bottomRightPos = new int[]{bottom, right};
-        int[] bottomPos = new int[]{bottom, currentPosition[1]};
-        int[] bottomLeftPos = new int[]{bottom, left};
-
-        // compare adjacent chars to the next word char
-        // if an adjacent char corresponds to the next word char, continue the search recursively with the position
-        //      of the adjacent char
-        // self char
-        if (word.charAt(currentWordIndex) == nextWordChar)
-            findWord(word, nextWordIndex, currentPosition, currentPath, grid, wordPaths);
-        // compare adjacent chars according the location in the grid
-        switch (locationInGrid) {
-            case "topLeftCorner" -> {
-                // right char
-                if (grid[currentPosition[0]][right] == nextWordChar)
-                    findWord(word, nextWordIndex, rightPos, currentPath, grid, wordPaths);
-
-                // bottom right char
-                if (grid[bottom][right] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomRightPos, currentPath, grid, wordPaths);
-
-                // bottom char
-                if (grid[bottom][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomPos, currentPath, grid, wordPaths);
-            }
-
-            case "topExtremity" -> {
-                // right char
-                if (grid[currentPosition[0]][right] == nextWordChar)
-                    findWord(word, nextWordIndex, rightPos, currentPath, grid, wordPaths);
-
-                // bottom right char
-                if (grid[bottom][right] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomRightPos, currentPath, grid, wordPaths);
-
-                // bottom char
-                if (grid[bottom][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomPos, currentPath, grid, wordPaths);
-
-                // bottom left char
-                if (grid[bottom][left] == nextWordChar)
-                    findWord(word, nextWordIndex,bottomLeftPos , currentPath, grid, wordPaths);
-
-                // left char
-                if (grid[currentPosition[0]][left] == nextWordChar)
-                    findWord(word, nextWordIndex, leftPos, currentPath, grid, wordPaths);
-            }
-
-            case "topRightCorner" -> {
-                // bottom char
-                if (grid[bottom][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomPos, currentPath, grid, wordPaths);
-
-                // bottom left char
-                if (grid[bottom][left] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomLeftPos, currentPath, grid, wordPaths);
-
-                // left char
-                if (grid[currentPosition[0]][left] == nextWordChar)
-                    findWord(word, nextWordIndex, leftPos, currentPath, grid, wordPaths);
-            }
-
-            case "rightExtremity" -> {
-                // bottom char
-                if (grid[bottom][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomPos, currentPath, grid, wordPaths);
-
-                // bottom left char
-                if (grid[bottom][left] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomLeftPos, currentPath, grid, wordPaths);
-
-                // left char
-                if (grid[currentPosition[0]][left] == nextWordChar)
-                    findWord(word, nextWordIndex, leftPos, currentPath, grid, wordPaths);
-
-                // top left char
-                if (grid[top][left] == nextWordChar)
-                    findWord(word, nextWordIndex, topLeftPos, currentPath, grid, wordPaths);
-
-                // top char
-                if (grid[top][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, topPos, currentPath, grid, wordPaths);
-            }
-
-            case "bottomRightCorner" -> {
-                // left char
-                if (grid[currentPosition[0]][left] == nextWordChar)
-                    findWord(word, nextWordIndex, leftPos, currentPath, grid, wordPaths);
-
-                // top left char
-                if (grid[top][left] == nextWordChar)
-                    findWord(word, nextWordIndex, topLeftPos, currentPath, grid, wordPaths);
-
-                // top char
-                if (grid[top][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, topPos, currentPath, grid, wordPaths);
-            }
-
-            case "bottomExtremity" -> {
-                // left char
-                if (grid[currentPosition[0]][left] == nextWordChar)
-                    findWord(word, nextWordIndex, leftPos, currentPath, grid, wordPaths);
-
-                // top left char
-                if (grid[top][left] == nextWordChar)
-                    findWord(word, nextWordIndex, topLeftPos, currentPath, grid, wordPaths);
-
-                // top char
-                if (grid[top][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, topPos, currentPath, grid, wordPaths);
-
-                // top right char
-                if (grid[top][right] == nextWordChar)
-                    findWord(word, nextWordIndex, topRightPos, currentPath, grid, wordPaths);
-
-                // right char
-                if (grid[currentPosition[0]][right] == nextWordChar)
-                    findWord(word, nextWordIndex, rightPos, currentPath, grid, wordPaths);
-            }
-
-            case "bottomLeftCorner" -> {
-                // top char
-                if (grid[top][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, topPos, currentPath, grid, wordPaths);
-
-                // top right char
-                if (grid[top][right] == nextWordChar)
-                    findWord(word, nextWordIndex, topRightPos, currentPath, grid, wordPaths);
-
-                // right char
-                if (grid[currentPosition[0]][right] == nextWordChar)
-                    findWord(word, nextWordIndex, rightPos, currentPath, grid, wordPaths);
-            }
-
-            case "leftExtremity" -> {
-                // top char
-                if (grid[top][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, topPos, currentPath, grid, wordPaths);
-
-                // top right char
-                if (grid[top][right] == nextWordChar)
-                    findWord(word, nextWordIndex, topRightPos, currentPath, grid, wordPaths);
-
-                // right char
-                if (grid[currentPosition[0]][right] == nextWordChar)
-                    findWord(word, nextWordIndex, rightPos, currentPath, grid, wordPaths);
-
-                // bottom right char
-                if (grid[bottom][right] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomRightPos, currentPath, grid, wordPaths);
-
-                // bottom char
-                if (grid[bottom][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomPos, currentPath, grid, wordPaths);
-            }
-
-            case "middle" -> {
-                // left char
-                if (grid[currentPosition[0]][left] == nextWordChar)
-                    findWord(word, nextWordIndex, leftPos, currentPath, grid, wordPaths);
-
-                // top left char
-                if (grid[top][left] == nextWordChar)
-                    findWord(word, nextWordIndex, topLeftPos, currentPath, grid, wordPaths);
-
-                // top char
-                if (grid[top][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, topPos, currentPath, grid, wordPaths);
-
-                // top right char
-                if (grid[top][right] == nextWordChar)
-                    findWord(word, nextWordIndex, topRightPos, currentPath, grid, wordPaths);
-
-                // right char
-                if (grid[currentPosition[0]][right] == nextWordChar)
-                    findWord(word, nextWordIndex, rightPos, currentPath, grid, wordPaths);
-
-                // bottom right char
-                if (grid[bottom][right] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomRightPos, currentPath, grid, wordPaths);
-
-                // bottom char
-                if (grid[bottom][currentPosition[1]] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomPos, currentPath, grid, wordPaths);
-
-                // bottom left char
-                if (grid[bottom][left] == nextWordChar)
-                    findWord(word, nextWordIndex, bottomLeftPos, currentPath, grid, wordPaths);
+        if (charAndPositions.containsKey(nextChar)) {
+            for (int[] nextPos : charAndPositions.get(nextChar)) {
+                // Check if next position is adjacent (or the same) to the last position
+                if (Math.abs(nextPos[0] - lastPosition[0]) <= 1 && Math.abs(nextPos[1] - lastPosition[1]) <= 1) {
+                    currentPath[wordIndex] = nextPos;
+                    search(word, wordIndex + 1, charAndPositions, currentPath, allPaths);
+                    // backtrack not needed with an array
+                }
             }
         }
     }
 
-    public static void findWords(String[] words, char[][] grid, HashMap<Character, ArrayList<int[]>> charAndPositions, ArrayList<String> paths) {
+    /**
+     * Searches for all words in the provided list within the grid and prints their paths.
+     *
+     * @param words an array of words to search for.
+     * @param charAndPositions a hashmap containing characters as keys and lists of their positions in the grid as values.
+     */
+    public static void findWords(String[] words, HashMap<Character, ArrayList<int[]>> charAndPositions) {
+        ArrayList<String> output = new ArrayList<>();
+
         for (String word : words) {
-            // array list of paths found
-            ArrayList<String> wordPaths = new ArrayList<>();
+            List<int[][]> wordPaths = findWord(word, charAndPositions);
 
-            // take the array list of positons of the first char
-            ArrayList<int[]> firstCharPositions = charAndPositions.get(word.charAt(0));
-
-            // search the paths
-            for (int[] position : firstCharPositions) {
-                // array list of positions
-                ArrayList<String> currentPath = new ArrayList<>();
-
-                // search
-                findWord(word, 0, position, currentPath, grid, wordPaths);
-
-                if (currentPath.size() != word.length()) continue;
+            for (int[][] path : wordPaths) {
+                StringBuilder sb = new StringBuilder(word + " ");
+                for (int i = 0; i < path.length; i++) {
+                    sb.append("(").append(path[i][0]).append(",").append(path[i][1]).append(")");
+                    if (i < path.length - 1) sb.append("->");
+                }
+                output.add(sb.toString());
             }
-
-            // append the paths of the word into the list of paths
-            paths.addAll(wordPaths);
         }
 
-        // sort the paths lexicographically
-        Collections.sort(paths);
-
-        // print the paths
-        for (String path : paths) System.out.println(path);
+        Collections.sort(output);
+        for (String line : output) {
+            System.out.println(line);
+        }
     }
 }
