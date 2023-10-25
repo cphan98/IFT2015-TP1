@@ -20,11 +20,6 @@ public class Main {
         } catch (NullPointerException e) {
             System.out.println("Cannot process queries.");
         }
-        System.out.println();
-        long endTime = System.nanoTime();
-        long timeElapsed = endTime - startTime;
-        System.out.println("Execution time in nanoseconds: " + timeElapsed);
-        System.out.println("Execution time in milliseconds: " + timeElapsed / 1000000);
     }
 
     /**
@@ -116,6 +111,7 @@ public class Main {
      * @return a list of paths, where each path is an array of positions (i, j) indicating where each character of the word can be found in the grid.
      */
     public static List<int[][]> findWord(String word, HashMap<Character, ArrayList<int[]>> charAndPositions) {
+        // Initialize the collection of paths
         List<int[][]> allPaths = new ArrayList<>();
 
         // Start the search with the first character of the word
@@ -126,6 +122,7 @@ public class Main {
                 search(word, 1, charAndPositions, currentPath, allPaths);
             }
         }
+        // Once the search has added all paths to the collection, return it
         return allPaths;
     }
 
@@ -139,11 +136,13 @@ public class Main {
      * @param allPaths a collection of all found paths for the word.
      */
     private static void search(String word, int wordIndex, HashMap<Character, ArrayList<int[]>> charAndPositions, int[][] currentPath, List<int[][]> allPaths) {
+        // If the word has been found, add the current path to the collection of paths
         if (wordIndex == word.length()) {
-            allPaths.add(currentPath.clone()); // Use clone to store a copy of the current path
+            allPaths.add(currentPath.clone());
             return;
         }
 
+        // Get the next character and the last position inputted in the path
         char nextChar = word.charAt(wordIndex);
         int[] lastPosition = currentPath[wordIndex - 1];
 
@@ -153,7 +152,6 @@ public class Main {
                 if (Math.abs(nextPos[0] - lastPosition[0]) <= 1 && Math.abs(nextPos[1] - lastPosition[1]) <= 1) {
                     currentPath[wordIndex] = nextPos;
                     search(word, wordIndex + 1, charAndPositions, currentPath, allPaths);
-                    // backtrack not needed with an array
                 }
             }
         }
