@@ -1,9 +1,19 @@
+// Authors :
+// Nathan Razafindrakoto 20254813
+// Hoang Thi-Thi Cynthia Phan 20220019
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
 public class Main {
+
+    /**
+     * Main method that reads a file and prints the paths of the words in the queries.
+     *
+     * @param args  the name of the file to be read
+     */
     public static void main(String[] args) {
         long startTime = System.nanoTime();
         ArrayList<GridAndWords> wholeFile = readFile(args[0]);
